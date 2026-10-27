@@ -4,6 +4,22 @@
 const DEFAULT_GAMES = [
     // --- JUEGOS WEB 3D & HTML5 ---
     {
+        id: "web-simpsons-hit-and-run",
+        title: "The Simpsons: Hit & Run (Web Port)",
+        system: "web",
+        systemName: "Web Port 3D",
+        core: "iframe",
+        genre: "Mundo Abierto / Conducción",
+        year: 2003,
+        players: "1 Jugador",
+        rating: 5.0,
+        featured: true,
+        banner: "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1200&q=80",
+        cover: "assets/covers/gw-simpsons-hit-and-run.svg",
+        description: "El mítico The Simpsons: Hit & Run ejecutándose 100% en el navegador vía WebAssembly/WebGL sin descargas ni instalaciones.",
+        playUrl: "https://vheissu.github.io/hit-and-run-web/"
+    },
+    {
         id: "web-peronprime",
         title: "PeronPrime 3D: Zombie Survival",
         system: "web",
