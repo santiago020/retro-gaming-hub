@@ -21,6 +21,22 @@ const DEFAULT_GAMES = [
         playUrl: "games/peronprime.html"
     },
     {
+        id: "web-sm64-browser",
+        title: "Super Mario 64 (Browser WebGL)",
+        system: "web",
+        systemName: "Web 3D Port",
+        core: "iframe",
+        genre: "Plataformas 3D",
+        year: 1996,
+        players: "1 Jugador",
+        rating: 5.0,
+        featured: true,
+        banner: "https://images.unsplash.com/photo-1578328819058-b69f3a3b0f6b?auto=format&fit=crop&w=1200&q=80",
+        cover: "assets/covers/n64-super-mario-64.svg",
+        description: "Super Mario 64 recompilado y optimizado para ejecutarse nativamente en WebGL sin plugins ni descargas.",
+        playUrl: "https://rob10mario64.netlify.app/"
+    },
+    {
         id: "web-doom",
         title: "DOOM Classic (1993)",
         system: "web",
@@ -50,6 +66,36 @@ const DEFAULT_GAMES = [
         cover: "assets/covers/web-doom.svg",
         description: "El revolucionario juego en 3D de Bethesda/id Software adaptado a WebAssembly con aceleración por hardware.",
         playUrl: "https://js-dos.com/games/quake.jsdos?anonymous=1"
+    },
+    {
+        id: "web-battle-city",
+        title: "Battle City (Web Reimplementation)",
+        system: "web",
+        systemName: "GameWave Web Port",
+        core: "iframe",
+        genre: "Arcade / Tanks",
+        year: 1985,
+        players: "1-2 Jugadores",
+        rating: 4.7,
+        featured: false,
+        cover: "assets/covers/nes-super-mario-bros.svg",
+        description: "Reimplementación web moderna del clásico tanque de NES para jugar directo en el navegador.",
+        playUrl: "https://vgrichina.github.io/battlecity/"
+    },
+    {
+        id: "web-stunts",
+        title: "Stunts / 4D Sports Driving (Web)",
+        system: "web",
+        systemName: "GameWave Web Port",
+        core: "iframe",
+        genre: "Carreras 3D / Acrobacias",
+        year: 1990,
+        players: "1 Jugador",
+        rating: 4.8,
+        featured: false,
+        cover: "assets/covers/ps2-need-for-speed-mw.svg",
+        description: "El pionero juego de carreras y creación de pistas en 3D poligonales adaptado para la web.",
+        playUrl: "https://dos.zone/player/?bundleUrl=https%3A%2F%2Fcdn.dos.zone%2Fcustom%2Fdos%2Fstunts.jsdos?anonymous=1"
     },
     {
         id: "web-pacman",
