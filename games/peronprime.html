@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PeronPrime - 3D Zombie Apocalypse</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background: #050508; color: #fff; }
+        #canvas-container { width: 100%; height: 100%; display: block; }
+
+        /* UI HUD */
+        #hud { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        
+        /* Crosshair */
+        #crosshair {
+            position: absolute; top: 50%; left: 50%; width: 10px; height: 10px;
+            background: rgba(255,255,255,0.85); border-radius: 50%;
+            transform: translate(-50%, -50%); box-shadow: 0 0 8px rgba(255,255,255,0.8);
+        }
+
+        /* Top Banner */
+        #top-bar {
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 20px; background: rgba(15, 15, 25, 0.85);
+            padding: 12px 30px; border-radius: 30px; border: 2px solid #ff3333;
+            box-shadow: 0 0 20px rgba(255, 50, 50, 0.4); font-weight: bold; font-size: 20px;
+        }
+        .stat-badge { display: flex; align-items: center; gap: 8px; }
+        .stat-val { color: #ffcc00; }
+
+        /* Health & Ammo */
+        #bottom-left {
+            position: absolute; bottom: 30px; left: 30px; background: rgba(15, 15, 25, 0.85);
+            padding: 15px 25px; border-radius: 15px; border: 2px solid #33cc33; min-width: 260px;
+        }
+        .bar-container { width: 100%; height: 16px; background: #222; border-radius: 8px; overflow: hidden; margin-top: 8px; }
+        #hp-fill { width: 100%; height: 100%; background: linear-gradient(90deg, #ff3333, #33cc33); transition: width 0.2s; }
+
+        #bottom-right {
+            position: absolute; bottom: 30px; right: 30px; background: rgba(15, 15, 25, 0.85);
+            padding: 15px 30px; border-radius: 15px; border: 2px solid #ffaa00; text-align: right;
+        }
+        #weapon-name { font-size: 22px; font-weight: bold; color: #ffcc00; }
+        #ammo-count { font-size: 16px; color: #aaa; margin-top: 5px; }
+
+        /* Notification Banner */
+        #notification {
+            position: absolute; top: 100px; left: 50%; transform: translateX(-50%);
+            background: linear-gradient(90deg, #ff8800, #ff2200); padding: 12px 35px;
+            border-radius: 20px; font-size: 24px; font-weight: bold; color: #fff;
+            box-shadow: 0 0 25px rgba(255, 100, 0, 0.8); opacity: 0; transition: opacity 0.4s, transform 0.4s;
+        }
+
+        /* Shop Overlay */
+        #shop-menu {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(10, 10, 18, 0.95); border: 3px solid #ffaa00; border-radius: 20px;
+            padding: 30px; width: 600px; display: none; pointer-events: auto;
+            box-shadow: 0 0 40px rgba(255, 170, 0, 0.5); text-align: center;
+        }
+        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }
+        .shop-item {
+            background: #1a1a2b; border: 2px solid #444; border-radius: 12px; padding: 15px;
+            cursor: pointer; transition: all 0.2s; text-align: left;
+        }
+        .shop-item:hover { border-color: #ffaa00; transform: translateY(-3px); background: #26263d; }
+        .shop-btn {
+            background: #ffaa00; color: #000; border: none; padding: 8px 15px;
+            border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 8px; width: 100%;
+        }
+
+        /* Start / Pause Screen */
+        #blocker {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85); display: flex; flex-direction: column;
+            justify-content: center; align-items: center; cursor: pointer; text-align: center;
+        }
+        #instructions h1 { font-size: 55px; color: #ff3333; margin-bottom: 10px; text-shadow: 0 0 20px rgba(255,0,0,0.8); }
+        #instructions p { font-size: 20px; color: #ddd; margin: 8px 0; }
+        .btn-start {
+            margin-top: 25px; padding: 15px 40px; font-size: 24px; font-weight: bold;
+            background: #ff3333; color: #fff; border: none; border-radius: 30px;
+            box-shadow: 0 0 25px rgba(255, 50, 50, 0.8); cursor: pointer;
+        }
+    </style>
+    <!-- Three.js from Cloudflare CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <div id="canvas-container"></div>
+
+    <div id="hud">
+        <div id="crosshair"></div>
+
+        <div id="top-bar">
+            <div class="stat-badge">💰 <span id="val-dinero" class="stat-val">$100</span></div>
+            <div class="stat-badge">💀 <span id="val-bajas" class="stat-val">0</span> Bajas</div>
+            <div class="stat-badge">🚨 OLEADA <span id="val-oleada" class="stat-val">1</span></div>
+        </div>
+
+        <div id="bottom-left">
+            <div>❤️ SALUD: <span id="val-hp">100</span>%</div>
+            <div class="bar-container"><div id="hp-fill"></div></div>
+        </div>
+
+        <div id="bottom-right">
+            <div id="weapon-name">🔫 PISTOLA 9MM</div>
+            <div id="ammo-count">Presiona <b>[B]</b> para abrir la Tienda</div>
+        </div>
+
+        <div id="notification">¡OLEADA SUPERADA!</div>
+    </div>
+
+    <!-- Tienda de Armas -->
+    <div id="shop-menu">
+        <h2 style="color: #ffaa00; font-size: 28px;">🛒 ARMERÍA PERONPRIME</h2>
+        <p style="color: #aaa;">Compra mejores armas con tu dinero ganado</p>
+        <div class="shop-grid">
+            <div class="shop-item" onclick="comprarArma(1)">
+                <h3>💥 Escopeta Devastadora</h3>
+                <p>Daño masivo a corta distancia</p>
+                <div style="color:#ffcc00; font-weight:bold; margin-top:5px;">Precio: $150</div>
+                <button class="shop-btn">COMPRAR</button>
+            </div>
+            <div class="shop-item" onclick="comprarArma(2)">
+                <h3>⚡ Subfusil MP5</h3>
+                <p>Ráfagas automáticas súper rápidas</p>
+                <div style="color:#ffcc00; font-weight:bold; margin-top:5px;">Precio: $300</div>
+                <button class="shop-btn">COMPRAR</button>
+            </div>
+            <div class="shop-item" onclick="comprarArma(3)">
+                <h3>🔥 Rifle de Asalto AK-47</h3>
+                <p>Daño militar automático de alto calibre</p>
+                <div style="color:#ffcc00; font-weight:bold; margin-top:5px;">Precio: $600</div>
+                <button class="shop-btn">COMPRAR</button>
+            </div>
+            <div class="shop-item" onclick="comprarArma(4)">
+                <h3>💣 Cañón Láser Cósmico</h3>
+                <p>Destruye hordas y titanes de 1 disparo</p>
+                <div style="color:#ffcc00; font-weight:bold; margin-top:5px;">Precio: $1200</div>
+                <button class="shop-btn">COMPRAR</button>
+            </div>
+        </div>
+        <button class="shop-btn" style="background: #444; color:#fff; width: 200px;" onclick="toggleShop()">CERRAR [B]</button>
+    </div>
+
+    <!-- Pantalla Inicial -->
+    <div id="blocker">
+        <div id="instructions">
+            <h1>PERONPRIME: 3D ZOMBIES</h1>
+            <p>🎮 <b>W, A, S, D:</b> Moverse | <b>ESPACIO:</b> Saltar</p>
+            <p>🖱️ <b>RATÓN:</b> Apuntar y <b>CLIC IZQUIERDO:</b> Disparar</p>
+            <p>🛒 <b>TECLA [B]:</b> Abrir Tienda de Armas</p>
+            <button class="btn-start">¡HACER CLIC PARA JUGAR!</button>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // SISTEMA DE AUDIO PROCEDURAL (Sintetizador WebAudio)
+        // ==========================================
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'shoot_pistol') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(40, now + 0.15);
+                gain.gain.setValueAtTime(0.4, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                osc.start(now);
+                osc.stop(now + 0.15);
+            } else if (type === 'shoot_shotgun') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(20, now + 0.3);
+                gain.gain.setValueAtTime(0.7, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            } else if (type === 'zombie_hit') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(180, now);
+                osc.frequency.exponentialRampToValueAtTime(60, now + 0.1);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            } else if (type === 'zombie_die') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(120, now);
+                osc.frequency.exponentialRampToValueAtTime(30, now + 0.4);
+                gain.gain.setValueAtTime(0.5, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                osc.start(now);
+                osc.stop(now + 0.4);
+            } else if (type === 'unlock') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.setValueAtTime(600, now + 0.1);
+                osc.frequency.setValueAtTime(900, now + 0.2);
+                gain.gain.setValueAtTime(0.4, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                osc.start(now);
+                osc.stop(now + 0.5);
+            }
+        }
+
+        // ==========================================
+        // VARIABLES DE JUEGO Y ESTADÍSTICAS
+        // ==========================================
+        let dinero = 100;
+        let bajas = 0;
+        let oleada = 1;
+        let salud = 100;
+        let isShopOpen = false;
+
+        const ARMAS = [
+            { id: 0, nombre: "🔫 PISTOLA 9MM", daño: 35, cadencia: 250, auto: false, color: 0xffff00, sound: 'shoot_pistol', precio: 0 },
+            { id: 1, nombre: "💥 ESCOPETA CAZADORA", daño: 100, cadencia: 700, auto: false, color: 0xff3300, sound: 'shoot_shotgun', precio: 150 },
+            { id: 2, nombre: "⚡ SUBFUSIL MP5", daño: 30, cadencia: 100, auto: true, color: 0x00ffff, sound: 'shoot_pistol', precio: 300 },
+            { id: 3, nombre: "🔥 AK-47 ASALTO", daño: 55, cadencia: 130, auto: true, color: 0xff8800, sound: 'shoot_pistol', precio: 600 },
+            { id: 4, nombre: "💣 CAÑÓN LÁSER ÉPICO", daño: 250, cadencia: 400, auto: false, color: 0xff00ff, sound: 'shoot_shotgun', precio: 1200 }
+        ];
+        let armaActual = ARMAS[0];
+        let armasCompradas = [0];
+
+        // ==========================================
+        // THREE.JS - ESCENA 3D, CÁMARA Y LUCES
+        // ==========================================
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x06060c);
+        scene.fog = new THREE.FogExp2(0x06060c, 0.015);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        container.appendChild(renderer.domElement);
+
+        // Luces
+        const hemiLight = new THREE.HemisphereLight(0x444466, 0x111122, 0.8);
+        scene.add(hemiLight);
+
+        const dirLight = new THREE.DirectionalLight(0xff4444, 0.6);
+        dirLight.position.set(50, 100, 50);
+        scene.add(dirLight);
+
+        // Suelo 3D
+        const floorGeo = new THREE.PlaneGeometry(300, 300, 30, 30);
+        const floorMat = new THREE.MeshStandardMaterial({ color: 0x18241b, roughness: 0.8, metalness: 0.2 });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        scene.add(floor);
+
+        // Cuadrícula de suelo estilizada
+        const grid = new THREE.GridHelper(300, 60, 0xff3333, 0x223322);
+        grid.position.y = 0.05;
+        scene.add(grid);
+
+        // Obstáculos y Cajas en el mapa
+        for (let i = 0; i < 25; i++) {
+            const boxGeo = new THREE.BoxGeometry(4, 4, 4);
+            const boxMat = new THREE.MeshStandardMaterial({ color: 0x2a2a3d, roughness: 0.5 });
+            const box = new THREE.Mesh(boxGeo, boxMat);
+            box.position.set((Math.random() - 0.5) * 160, 2, (Math.random() - 0.5) * 160);
+            scene.add(box);
+        }
+
+        // Modelo 3D de Arma en Primera Persona
+        const gunGroup = new THREE.Group();
+        const gunBodyGeo = new THREE.BoxGeometry(0.2, 0.3, 0.8);
+        const gunBodyMat = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.8 });
+        const gunBody = new THREE.Mesh(gunBodyGeo, gunBodyMat);
+        gunGroup.add(gunBody);
+
+        const gunBarrelGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.7);
+        const gunBarrelMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+        const gunBarrel = new THREE.Mesh(gunBarrelGeo, gunBarrelMat);
+        gunBarrel.rotation.x = Math.PI / 2;
+        gunBarrel.position.set(0, 0.05, -0.6);
+        gunGroup.add(gunBarrel);
+
+        gunGroup.position.set(0.3, -0.3, -0.6);
+        camera.add(gunGroup);
+        scene.add(camera);
+
+        // ==========================================
+        // CONTROL DE JUGADOR (FIRST PERSON)
+        // ==========================================
+        const blocker = document.getElementById('blocker');
+        let isLocked = false;
+        let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
+        const velocity = new THREE.Vector3();
+        const direction = new THREE.Vector3();
+
+        blocker.addEventListener('click', () => {
+            document.body.requestPointerLock();
+        });
+
+        document.addEventListener('pointerlockchange', () => {
+            isLocked = document.pointerLockElement === document.body;
+            blocker.style.display = isLocked ? 'none' : 'flex';
+        });
+
+        const euler = new THREE.Euler(0, 0, 0, 'YXZ');
+        document.addEventListener('mousemove', (e) => {
+            if (!isLocked) return;
+            euler.setFromQuaternion(camera.quaternion);
+            euler.y -= e.movementX * 0.0025;
+            euler.x -= e.movementY * 0.0025;
+            euler.x = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, euler.x));
+            camera.quaternion.setFromEuler(euler);
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'KeyW') moveForward = true;
+            if (e.code === 'KeyS') moveBackward = true;
+            if (e.code === 'KeyA') moveLeft = true;
+            if (e.code === 'KeyD') moveRight = true;
+            if (e.code === 'KeyB') toggleShop();
+            if (e.code === 'Digit1' && armasCompradas.includes(0)) equiparArma(ARMAS[0]);
+            if (e.code === 'Digit2' && armasCompradas.includes(1)) equiparArma(ARMAS[1]);
+            if (e.code === 'Digit3' && armasCompradas.includes(2)) equiparArma(ARMAS[2]);
+            if (e.code === 'Digit4' && armasCompradas.includes(3)) equiparArma(ARMAS[3]);
+            if (e.code === 'Digit5' && armasCompradas.includes(4)) equiparArma(ARMAS[4]);
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.code === 'KeyW') moveForward = false;
+            if (e.code === 'KeyS') moveBackward = false;
+            if (e.code === 'KeyA') moveLeft = false;
+            if (e.code === 'KeyD') moveRight = false;
+        });
+
+        // ==========================================
+        // SISTEMA DE DISPARO
+        // ==========================================
+        let canShoot = true;
+        let isMouseDown = false;
+
+        document.addEventListener('mousedown', (e) => {
+            if (e.button === 0 && isLocked) {
+                isMouseDown = true;
+                shoot();
+            }
+        });
+        document.addEventListener('mouseup', () => { isMouseDown = false; });
+
+        function shoot() {
+            if (!canShoot || isShopOpen) return;
+            canShoot = false;
+
+            playSound(armaActual.sound);
+
+            // Retroceso visual del arma
+            gunGroup.position.z = -0.4;
+            gunGroup.rotation.x = 0.2;
+
+            // Raycast desde el centro de la cámara
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+            
+            // Buscar impacto en zombies
+            const hitTargets = [];
+            zombies.forEach(z => {
+                const intersects = raycaster.intersectObjects(z.mesh.children, true);
+                if (intersects.length > 0) {
+                    hitTargets.push({ zombie: z, dist: intersects[0].distance, point: intersects[0].point });
+                }
+            });
+
+            // Trazador láser visible
+            const startPos = new THREE.Vector3();
+            gunBarrel.getWorldPosition(startPos);
+            let endPos = raycaster.ray.origin.clone().add(raycaster.ray.direction.clone().multiplyScalar(100));
+
+            if (hitTargets.length > 0) {
+                hitTargets.sort((a, b) => a.dist - b.dist);
+                const hit = hitTargets[0];
+                endPos = hit.point;
+                dañarZombie(hit.zombie, armaActual.daño);
+            }
+
+            // Crear rayo láser
+            const laserMat = new THREE.LineBasicMaterial({ color: armaActual.color, linewidth: 3 });
+            const laserGeo = new THREE.BufferGeometry().setFromPoints([startPos, endPos]);
+            const laser = new THREE.Line(laserGeo, laserMat);
+            scene.add(laser);
+            setTimeout(() => scene.remove(laser), 50);
+
+            setTimeout(() => {
+                canShoot = true;
+                if (armaActual.auto && isMouseDown) shoot();
+            }, armaActual.cadencia);
+        }
+
+        // ==========================================
+        // SISTEMA DE ZOMBIES (NORMAL, VELOZ, TITÁN)
+        // ==========================================
+        const zombies = [];
+
+        function spawnZombie(tipo) {
+            const esc = (tipo === 'TITAN' ? 2.3 : (tipo === 'CORREDOR' ? 0.75 : 1.0));
+            const vida = (tipo === 'TITAN' ? 400 : (tipo === 'CORREDOR' ? 40 : 80));
+            const vel = (tipo === 'TITAN' ? 4.5 : (tipo === 'CORREDOR' ? 12 : 7));
+            const color = (tipo === 'TITAN' ? 0x220000 : (tipo === 'CORREDOR' ? 0xff6600 : 0x22bb33));
+            const premio = (tipo === 'TITAN' ? 200 : (tipo === 'CORREDOR' ? 50 : 35));
+
+            const group = new THREE.Group();
+
+            // Torso
+            const torsoGeo = new THREE.BoxGeometry(1.6 * esc, 2.2 * esc, 0.9 * esc);
+            const torsoMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.6 });
+            const torso = new THREE.Mesh(torsoGeo, torsoMat);
+            torso.position.y = 1.8 * esc;
+            group.add(torso);
+
+            // Cabeza
+            const headGeo = new THREE.BoxGeometry(1.0 * esc, 1.0 * esc, 1.0 * esc);
+            const headMat = new THREE.MeshStandardMaterial({ color: tipo === 'TITAN' ? 0xff0000 : 0x116622 });
+            const head = new THREE.Mesh(headGeo, headMat);
+            head.position.y = 3.3 * esc;
+            group.add(head);
+
+            // Brazos
+            const armGeo = new THREE.BoxGeometry(0.5 * esc, 1.8 * esc, 0.5 * esc);
+            const leftArm = new THREE.Mesh(armGeo, torsoMat);
+            leftArm.position.set(-1.1 * esc, 2.0 * esc, -0.6 * esc);
+            leftArm.rotation.x = Math.PI / 2.3;
+            group.add(leftArm);
+
+            const rightArm = new THREE.Mesh(armGeo, torsoMat);
+            rightArm.position.set(1.1 * esc, 2.0 * esc, -0.6 * esc);
+            rightArm.rotation.x = Math.PI / 2.3;
+            group.add(rightArm);
+
+            // Posición de spawn alrededor del jugador
+            const angle = Math.random() * Math.PI * 2;
+            const dist = 35 + Math.random() * 25;
+            group.position.set(camera.position.x + Math.cos(angle) * dist, 0, camera.position.z + Math.sin(angle) * dist);
+
+            scene.add(group);
+            zombies.push({ mesh: group, hp: vida, maxHp: vida, vel: vel, esc: esc, premio: premio, tipo: tipo });
+        }
+
+        function dañarZombie(z, dmg) {
+            z.hp -= dmg;
+            playSound('zombie_hit');
+
+            // Parpadeo blanco de impacto
+            z.mesh.children.forEach(c => {
+                if (c.material) c.material.color.setHex(0xffffff);
+            });
+            setTimeout(() => {
+                z.mesh.children.forEach(c => {
+                    if (c.material) c.material.color.setHex(z.tipo === 'TITAN' ? 0x220000 : (z.tipo === 'CORREDOR' ? 0xff6600 : 0x22bb33));
+                });
+            }, 80);
+
+            if (z.hp <= 0) {
+                eliminarZombie(z);
+            }
+        }
+
+        function eliminarZombie(z) {
+            playSound('zombie_die');
+            dinero += z.premio;
+            bajas += 1;
+            actualizarHUD();
+
+            // Desintegración / Físicas
+            scene.remove(z.mesh);
+            const idx = zombies.indexOf(z);
+            if (idx > -1) zombies.splice(idx, 1);
+
+            // Comprobar si se completó la oleada
+            if (zombies.length === 0) {
+                oleada++;
+                dinero += oleada * 60;
+                actualizarHUD();
+                mostrarNotificacion(`🎉 ¡OLEADA ${oleada - 1} SUPERADA! (+Bonus $${oleada * 60})`);
+                setTimeout(iniciarOleada, 4000);
+            }
+        }
+
+        function iniciarOleada() {
+            actualizarHUD();
+            mostrarNotificacion(`🚨 OLEADA ${oleada} ENTRANTE 🚨`);
+            const totalZombies = 4 + (oleada * 3);
+
+            for (let i = 0; i < totalZombies; i++) {
+                setTimeout(() => {
+                    let tipo = 'NORMAL';
+                    if (oleada >= 2 && Math.random() < 0.35) tipo = 'CORREDOR';
+                    if (oleada >= 3 && i === 0) tipo = 'TITAN';
+                    spawnZombie(tipo);
+                }, i * 600);
+            }
+        }
+
+        // ==========================================
+        // TIENDA Y ECONOMÍA
+        // ==========================================
+        function toggleShop() {
+            isShopOpen = !isShopOpen;
+            document.getElementById('shop-menu').style.display = isShopOpen ? 'block' : 'none';
+            if (isShopOpen) {
+                document.exitPointerLock();
+            } else {
+                document.body.requestPointerLock();
+            }
+        }
+
+        function comprarArma(id) {
+            const arma = ARMAS[id];
+            if (dinero >= arma.precio) {
+                dinero -= arma.precio;
+                if (!armasCompradas.includes(id)) armasCompradas.push(id);
+                equiparArma(arma);
+                actualizarHUD();
+                playSound('unlock');
+                mostrarNotificacion(`✨ ¡COMPRASTE: ${arma.nombre}!`);
+                toggleShop();
+            } else {
+                alert("¡No tienes suficiente dinero! Elimina más zombies para ganar dinero.");
+            }
+        }
+
+        function equiparArma(arma) {
+            armaActual = arma;
+            document.getElementById('weapon-name').innerText = arma.nombre;
+        }
+
+        function actualizarHUD() {
+            document.getElementById('val-dinero').innerText = `$${dinero}`;
+            document.getElementById('val-bajas').innerText = bajas;
+            document.getElementById('val-oleada').innerText = oleada;
+            document.getElementById('val-hp').innerText = Math.max(0, Math.floor(salud));
+            document.getElementById('hp-fill').style.width = `${salud}%`;
+        }
+
+        function mostrarNotificacion(texto) {
+            const notif = document.getElementById('notification');
+            notif.innerText = texto;
+            notif.style.opacity = 1;
+            notif.style.transform = 'translateX(-50%) translateY(0)';
+            setTimeout(() => {
+                notif.style.opacity = 0;
+                notif.style.transform = 'translateX(-50%) translateY(-20px)';
+            }, 3000);
+        }
+
+        // ==========================================
+        // BUCLE PRINCIPAL DE ANIMACIÓN
+        // ==========================================
+        camera.position.set(0, 2, 0);
+        let prevTime = performance.now();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const time = performance.now();
+            const delta = (time - prevTime) / 1000;
+
+            if (isLocked) {
+                // Movimiento suave del jugador
+                velocity.x -= velocity.x * 10.0 * delta;
+                velocity.z -= velocity.z * 10.0 * delta;
+
+                direction.z = Number(moveForward) - Number(moveBackward);
+                direction.x = Number(moveRight) - Number(moveLeft);
+                direction.normalize();
+
+                if (moveForward || moveBackward) velocity.z -= direction.z * 60.0 * delta;
+                if (moveLeft || moveRight) velocity.x -= direction.x * 60.0 * delta;
+
+                camera.translateX(-velocity.x * delta);
+                camera.translateZ(velocity.z * delta);
+                camera.position.y = 2; // Mantener altura
+
+                // Retorno suave del retroceso del arma
+                gunGroup.position.z += (-0.6 - gunGroup.position.z) * 0.2;
+                gunGroup.rotation.x += (0 - gunGroup.rotation.x) * 0.2;
+
+                // IA de Zombies: Perseguir al jugador
+                zombies.forEach(z => {
+                    const toPlayer = new THREE.Vector3().subVectors(camera.position, z.mesh.position);
+                    toPlayer.y = 0;
+                    const dist = toPlayer.length();
+
+                    if (dist > 1.8 * z.esc) {
+                        toPlayer.normalize();
+                        z.mesh.position.add(toPlayer.multiplyScalar(z.vel * delta));
+                        z.mesh.lookAt(camera.position.x, z.mesh.position.y, camera.position.z);
+                    } else {
+                        // Ataque del zombie al jugador
+                        salud -= (z.tipo === 'TITAN' ? 30 : 12) * delta;
+                        actualizarHUD();
+                        if (salud <= 0) {
+                            alert("💀 ¡HAS SIDO DEVORADO! Reiniciando partida...");
+                            window.location.reload();
+                        }
+                    }
+                });
+            }
+
+            prevTime = time;
+            renderer.render(scene, camera);
+        }
+
+        // Iniciar Primera Oleada
+        setTimeout(iniciarOleada, 2500);
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 600" width="400" height="600">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#450a0a" />
+      <stop offset="100%" stop-color="#0a0b12" />
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#dc2626" />
+      <stop offset="100%" stop-color="#ffffff" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="6" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="400" height="600" fill="url(#bg)" />
+  
+  <!-- Decorative Grid / Cyber lines -->
+  <path d="M0 100 L400 100 M0 200 L400 200 M0 300 L400 300 M0 400 L400 400 M0 500 L400 500" stroke="#dc2626" stroke-opacity="0.1" stroke-width="1" />
+  <path d="M100 0 L100 600 M200 0 L200 600 M300 0 L300 600" stroke="#dc2626" stroke-opacity="0.1" stroke-width="1" />
+  
+  <!-- Central Emblem / Icon Box -->
+  <circle cx="200" cy="240" r="110" fill="#450a0a" stroke="#dc2626" stroke-width="4" filter="url(#glow)" />
+  <text x="200" y="215" font-family="system-ui, sans-serif" font-weight="900" font-size="28" fill="#dc2626" text-anchor="middle">🎮</text>
+  <text x="200" y="260" font-family="system-ui, sans-serif" font-weight="800" font-size="22" fill="#ffffff" text-anchor="middle">NES</text>
+  
+  <!-- System Badge Top Left -->
+  <rect x="25" y="25" width="90" height="34" rx="8" fill="#dc2626" />
+  <text x="70" y="47" font-family="system-ui, sans-serif" font-weight="800" font-size="14" fill="#ffffff" text-anchor="middle">NES</text>
+  
+  <!-- Title and Footer Area -->
+  <rect x="0" y="420" width="400" height="180" fill="#0a0b12" fill-opacity="0.9" />
+  <path d="M0 420 L400 400 L400 600 L0 600 Z" fill="#0a0b12" fill-opacity="0.8" />
+  
+  <text x="35" y="475" font-family="system-ui, sans-serif" font-weight="900" font-size="26" fill="#ffffff" width="330">
+    Super Mario Bros. 3
+  </text>
+  
+  
+  <rect x="35" y="535" width="120" height="28" rx="14" fill="#dc2626" fill-opacity="0.3" stroke="#dc2626" stroke-width="1.5" />
+  <text x="95" y="553" font-family="system-ui, sans-serif" font-weight="700" font-size="12" fill="#ffffff" text-anchor="middle">RETROSTATION</text>
+</svg>

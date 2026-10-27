@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RetroStation Hub - Consola Web PSX, Nintendo, Sega & 3D</title>
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%20%22100%22%20%22100%22><text y=%22.9em%22 font-size=%2290%22>🎮</text></svg>">
+    <!-- Estilos de la interfaz -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- NAVBAR SUPERIOR -->
+    <header class="navbar">
+        <div class="brand" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+            <span class="brand-icon">🎮</span>
+            <span>RetroStation Hub</span>
+        </div>
+
+        <div class="nav-actions">
+            <!-- Indicador de Gamepad USB / Bluetooth -->
+            <div class="gamepad-badge" id="gamepad-indicator" title="Soporta mandos de PS4, PS5, Xbox y Switch">
+                🎮 Conecta un mando (Opcional)
+            </div>
+
+            <!-- Sonido retro ON/OFF -->
+            <button class="btn btn-secondary btn-icon" id="btn-toggle-sound" title="Activar/Silenciar Efectos de Audio">
+                🔊 Sonido: ON
+            </button>
+
+            <!-- Enlace a GameWave Digital -->
+            <a href="https://gamewave.digital/" target="_blank" rel="noopener noreferrer" class="btn btn-secondary" title="Abrir sitio oficial GameWave Digital">
+                🌊 GameWave.digital ↗
+            </a>
+
+            <!-- Botón Sincronizar GameWave con temporizador de 7 días -->
+            <button class="btn btn-secondary btn-icon" id="btn-sync-gamewave" title="Verificar nuevos ports en GameWave Digital (Ciclo automático cada 7 días)">
+                🔄 Sincronizar Ports
+            </button>
+
+            <!-- Cargar ROM rápida desde el PC -->
+            <input type="file" id="quick-rom-input" style="display:none;" accept=".nes,.sfc,.smc,.gba,.gbc,.gb,.iso,.bin,.cue,.z64,.n64,.nds,.chd,.pbp,.md,.zip" />
+            <button class="btn btn-secondary" id="btn-quick-rom" title="Cargar cualquier archivo ROM desde tu disco duro">
+                📂 Cargar ROM
+            </button>
+
+            <!-- Agregar juego a la lista -->
+            <button class="btn btn-primary" id="btn-add-game">
+                ➕ Añadir Juego
+            </button>
+        </div>
+    </header>
+
+    <!-- HERO CAROUSEL BANNER DESTACADO -->
+    <section class="hero-section">
+        <div class="hero-bg" id="hero-banner-bg"></div>
+        <div class="hero-content">
+            <div class="hero-badges">
+                <span class="hero-badge badge-featured">Destacado</span>
+                <span class="hero-badge" id="hero-badge-system">SISTEMA</span>
+                <span class="hero-badge badge-rating" id="hero-badge-rating">★ 5.0</span>
+            </div>
+            <h1 class="hero-title" id="hero-title">Título del Juego</h1>
+            <p class="hero-desc" id="hero-desc">Descripción detallada del juego retro.</p>
+            <div class="hero-actions">
+                <button class="btn btn-primary" id="btn-hero-play" style="padding: 14px 32px; font-size: 16px;">
+                    ▶ JUGAR AHORA
+                </button>
+            </div>
+        </div>
+
+        <div class="hero-nav">
+            <button class="hero-nav-btn" id="hero-prev" title="Anterior">❮</button>
+            <button class="hero-nav-btn" id="hero-next" title="Siguiente">❯</button>
+        </div>
+    </section>
+
+    <!-- BARRA DE CATEGORÍAS Y BÚSQUEDA -->
+    <div class="filter-bar">
+        <!-- Pestañas de plataformas y consolas -->
+        <div class="system-tabs-wrapper" id="system-tabs">
+            <div class="nav-pill active" data-system="all">
+                <span>🎮</span> Todos
+            </div>
+            <div class="nav-pill" data-system="favs">
+                <span>⭐</span> Favoritos
+            </div>
+            <div class="nav-pill" data-system="recent">
+                <span>🕒</span> Recientes
+            </div>
+            <div class="nav-pill" data-system="gamewave" style="background: rgba(6, 182, 212, 0.15); border-color: #06b6d4; color: #22d3ee;">
+                <span>🌊</span> GameWave Ports
+            </div>
+            <div class="nav-pill" data-system="psx">
+                <span>🕹️</span> PlayStation (PS1/PS2)
+            </div>
+            <div class="nav-pill" data-system="gba">
+                <span>👾</span> Game Boy Advance
+            </div>
+            <div class="nav-pill" data-system="snes">
+                <span>🍄</span> Super Nintendo
+            </div>
+            <div class="nav-pill" data-system="n64">
+                <span>🪐</span> Nintendo 64
+            </div>
+            <div class="nav-pill" data-system="nds">
+                <span>📱</span> Nintendo DS
+            </div>
+            <div class="nav-pill" data-system="nes">
+                <span>⭐</span> Nintendo NES
+            </div>
+            <div class="nav-pill" data-system="sega">
+                <span>⚡</span> Sega Genesis
+            </div>
+            <div class="nav-pill" data-system="web">
+                <span>🌐</span> Web & 3D (PeronPrime / DOOM)
+            </div>
+        </div>
+
+        <!-- Búsqueda rápida, orden y respaldo -->
+        <div class="search-and-controls">
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="search-input" placeholder="Buscar por título, género o saga (Crash, Mario, Pokémon, Zelda...)" />
+            </div>
+
+            <div class="controls-right">
+                <select class="sort-select" id="sort-select">
+                    <option value="featured">Orden: Destacados primero</option>
+                    <option value="rating">Calificación más alta</option>
+                    <option value="name-asc">Nombre (A - Z)</option>
+                    <option value="name-desc">Nombre (Z - A)</option>
+                    <option value="year-desc">Año (Más reciente)</option>
+                    <option value="year-asc">Año (Más antiguo)</option>
+                </select>
+
+                <!-- Respaldo de biblioteca -->
+                <button class="btn btn-secondary btn-icon" id="btn-export-backup" title="Guardar copia de seguridad de tu biblioteca y favoritos en archivo JSON">
+                    💾 Exportar
+                </button>
+                <input type="file" id="backup-file-input" style="display:none;" accept=".json" />
+                <button class="btn btn-secondary btn-icon" id="btn-import-backup" title="Restaurar copia de seguridad de juegos">
+                    📥 Importar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTENEDOR PRINCIPAL DE JUEGOS -->
+    <main class="games-container">
+        <div class="section-header">
+            <h2 class="section-title">Catálogo de Juegos</h2>
+            <div class="section-stats">
+                Mostrando: <strong id="stat-showing-count">0</strong> | 
+                Total: <strong id="stat-total-games">0</strong> juegos | 
+                Favoritos: <strong id="stat-fav-games">0</strong> | 
+                Plataformas: <strong id="stat-systems-count">8</strong>
+            </div>
+        </div>
+
+        <div class="games-grid" id="games-grid">
+            <!-- Las tarjetas de juegos se inyectan dinámicamente con app.js -->
+        </div>
+    </main>
+
+    <!-- REPRODUCTOR DE EMULADOR A PANTALLA COMPLETA -->
+    <div id="emulator-modal">
+        <div class="emulator-top-bar">
+            <div class="player-info">
+                <span class="player-sys-tag" id="player-game-sys">SISTEMA</span>
+                <span class="player-title" id="player-game-title">Juego</span>
+                <span class="player-controls-guide" id="player-controls-guide"></span>
+            </div>
+            <div class="player-actions">
+                <button class="player-btn" id="btn-toggle-crt" title="Activar/Desactivar líneas de escaneo retro de televisores CRT">
+                    📺 Filtro CRT
+                </button>
+                <button class="player-btn" id="btn-toggle-fullscreen" title="Pantalla Completa">
+                    ⛶ Pantalla Completa
+                </button>
+                <button class="player-btn btn-close-player" id="btn-close-emulator" title="Salir al Menú Principal">
+                    ✕ Salir (ESC)
+                </button>
+            </div>
+        </div>
+        <div id="emulator-screen-wrapper">
+            <!-- EmulatorJS o iFrame 3D inyectado dinámicamente -->
+        </div>
+    </div>
+
+    <!-- MODAL PARA AGREGAR JUEGO NUEVO -->
+    <div class="modal-overlay" id="add-game-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="modal-title">Añadir Nuevo Juego a la Consola</h3>
+                <button class="btn btn-secondary btn-icon" id="btn-close-add-modal">✕</button>
+            </div>
+            <form id="form-add-game">
+                <div class="form-group">
+                    <label>Título del Juego *</label>
+                    <input type="text" name="title" required placeholder="Ej: Silent Hill, Gran Turismo 2..." />
+                </div>
+                <div class="form-group">
+                    <label>Consola / Sistema *</label>
+                    <select name="system" required>
+                        <option value="gamewave">GameWave Port / PC</option>
+                        <option value="psx">PlayStation (PS1/PS2)</option>
+                        <option value="gba">Game Boy Advance</option>
+                        <option value="snes">Super Nintendo</option>
+                        <option value="n64">Nintendo 64</option>
+                        <option value="nds">Nintendo DS</option>
+                        <option value="nes">Nintendo NES</option>
+                        <option value="sega">Sega Genesis</option>
+                        <option value="web">Juego Web / HTML5</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Género</label>
+                    <input type="text" name="genre" placeholder="Ej: Survival Horror, Carreras, Lucha..." />
+                </div>
+                <div class="form-group">
+                    <label>URL de Portada (Carátula)</label>
+                    <input type="url" name="coverUrl" placeholder="https://ejemplo.com/caratula.jpg" />
+                </div>
+                <div class="form-group">
+                    <label>Archivo ROM desde tu PC (Se guarda en tu navegador)</label>
+                    <input type="file" name="romFile" accept=".nes,.sfc,.smc,.gba,.gbc,.gb,.iso,.bin,.cue,.z64,.n64,.nds,.chd,.pbp,.md,.zip" />
+                </div>
+                <div class="form-group">
+                    <label>O Enlace URL directo a la ROM / Juego Web</label>
+                    <input type="url" name="romUrl" placeholder="https://ejemplo.com/juego.chd" />
+                </div>
+                <div class="form-group">
+                    <label>Descripción / Sinopsis</label>
+                    <textarea name="description" rows="2" placeholder="Breve resumen o historia del juego..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; margin-top: 10px;">
+                    Guardar Juego en mi Consola
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- OVERLAY DRAG & DROP GLOBAL -->
+    <div id="global-drag-overlay">
+        <div class="drag-icon">🎮</div>
+        <h2>¡Suelta tu ROM aquí para jugar!</h2>
+        <p style="color: #94a3b8; font-size: 16px; margin-top: 8px;">Compatible con PS1, GBA, SNES, N64, NDS, NES y Sega Genesis</p>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="js/audio.js"></script>
+    <script src="js/database.js"></script>
+    <script src="js/games-data.js"></script>
+    <script src="js/gamewave-data.js"></script>
+    <script src="js/emulator-player.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
