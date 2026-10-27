@@ -95,8 +95,7 @@ class RetroStationApp {
 
     loadGames() {
         const customGames = window.retroDB ? window.retroDB.getCustomGames() : [];
-        const gwGames = (typeof GAMEWAVE_GAMES !== 'undefined') ? GAMEWAVE_GAMES : [];
-        this.allGames = [...customGames, ...DEFAULT_GAMES, ...gwGames];
+        this.allGames = [...customGames, ...DEFAULT_GAMES];
     }
 
     setupSystemTabs() {
