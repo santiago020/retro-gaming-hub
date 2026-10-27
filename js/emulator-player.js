@@ -91,22 +91,13 @@ class EmulatorPlayer {
         // Limpiar pantalla previa
         this.frameWrapper.innerHTML = "";
 
-        // Si es un juego de redirección externa directa (GameWave Digital, ports o enlaces oficiales)
-        if (game.core === "link" || game.redirectUrl) {
-            const targetUrl = game.redirectUrl || game.projectUrl || game.playUrl;
+        // Si es un juego web o enlace directo (The Simpsons Hit & Run, Super Mario 64 WebGL, etc.), abrir directamente en la página de alojamiento
+        if (game.system === "web" || game.core === "link" || game.redirectUrl) {
+            const targetUrl = game.playUrl || game.redirectUrl || game.projectUrl || game.romUrl;
             if (targetUrl) {
-                const openExternal = confirm(`Estás a punto de abrir la ficha/port de "${game.title}" en GameWave Digital:\n\n${targetUrl}\n\n¿Deseas abrirlo ahora en una pestaña nueva?`);
-                if (openExternal) {
-                    window.open(targetUrl, '_blank', 'noopener,noreferrer');
-                }
+                window.open(targetUrl, '_blank', 'noopener,noreferrer');
                 return;
             }
-        }
-
-        // Si es un juego HTML5 / Web 3D (como PeronPrime o Doom Web)
-        if (game.system === "web" || game.core === "html5" || game.core === "iframe") {
-            this.launchWebGame(game);
-            return;
         }
 
         // Si es un juego de consola retro (EmulatorJS)
